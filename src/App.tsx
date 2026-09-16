@@ -25,6 +25,7 @@ import { ShipmentTable } from './components/ShipmentTable';
 import { SummaryCards } from './components/SummaryCards';
 import { DataImporterModal } from './components/DataImporterModal';
 import { RawDataViewer } from './components/RawDataViewer';
+import { GroupByReportModal } from './components/GroupByReportModal';
 
 const STORAGE_KEY = 'shipment_processor_raw_data_v1';
 
@@ -47,6 +48,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isImporterOpen, setIsImporterOpen] = useState(false);
   const [isRawViewerOpen, setIsRawViewerOpen] = useState(false);
+  const [isGroupByModalOpen, setIsGroupByModalOpen] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
   const [notification, setNotification] = useState<{
     type: 'success' | 'warning' | 'info';
@@ -245,7 +247,7 @@ export default function App() {
     setTimeout(() => setNotification(null), 4500);
   };
 
-  // دالة الطباعة وحفظ PDF المباشر النظيفة والسريعة عبر طابعة المتصفح المدمجة (window.print())
+  // دالة الطباعة وحفظ PDF المباشر لتقرير تجميع الشحنات والحركات التفصيلي (Group-By Code)
   const handlePrintDirect = () => {
     const exportDataset = searchQuery.trim() ? filteredData : aggregatedData;
     if (exportDataset.length === 0) {
@@ -256,15 +258,16 @@ export default function App() {
       return;
     }
 
-    try {
-      window.print();
-    } catch (err) {
-      console.warn('Direct window.print encountered an error, falling back to dedicated print engine:', err);
-      printGroupByReport(exportDataset, {
-        searchQuery,
-        totalMasterCount: aggregatedData.length,
-      });
-    }
+    setNotification({
+      type: 'info',
+      message: 'جارٍ فتح نافذة تجهيز وطباعة تقرير تجميع الشحنات والحركات التفصيلي (Group-By Code)...',
+    });
+    printGroupByReport(exportDataset, {
+      searchQuery,
+      totalMasterCount: aggregatedData.length,
+    }).then(() => {
+      setTimeout(() => setNotification(null), 3500);
+    });
   };
 
   return (
@@ -455,23 +458,33 @@ export default function App() {
               <span>تصدير إلى Excel</span>
             </button>
 
-            {/* 6. تصدير تقرير الحركات المنَسَّق Excel/CSV (بنفسجي أنيق) */}
+            {/* 6. تقرير الحركات المنَسَّق Excel/CSV ومعاينة (بنفسجي أنيق) */}
             <div className="relative inline-flex rounded-xl shadow-xs">
+              <button
+                type="button"
+                id="btn-open-groupby-modal"
+                onClick={() => setIsGroupByModalOpen(true)}
+                className="px-3.5 py-2.5 text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 active:bg-purple-800 border border-purple-500 rounded-r-xl transition-all flex items-center gap-2 cursor-pointer"
+                title="معاينة تقرير تجميع الشحنات والحركات التفصيلي (Group-By Code) بالتصميم الاحترافي والترويسة الكاملة"
+              >
+                <FolderTree className="w-4 h-4 text-purple-200" />
+                <span>تقرير الحركات المنسق (Group-By)</span>
+              </button>
               <button
                 type="button"
                 id="btn-export-groupby-excel"
                 onClick={() => handleExportGroupBy('excel')}
-                className="px-3.5 py-2.5 text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 active:bg-purple-800 border border-purple-500 rounded-r-xl transition-all flex items-center gap-2 cursor-pointer"
-                title="تصدير تقرير شامل متسلسل يعرض كل كود رئيسي ومعه تحته مباشرة كافة الحركات والسجلات الفرعية مع تظليل الهيدرات الأساسية، والصفوف الرئيسية، وصف المجموع بنظام Group-By في Excel"
+                className="px-2.5 py-2.5 text-xs font-bold text-white bg-purple-700 hover:bg-purple-800 border-y border-l border-purple-500 transition-all flex items-center gap-1 cursor-pointer border-r border-r-purple-600"
+                title="تصدير تقرير الحركات المنَسَّق بصيغة Excel ملون ومظلل هيدرات ومجاميع"
               >
-                <FolderTree className="w-4 h-4 text-purple-200" />
-                <span>تصدير تقرير الحركات المنَسَّق Excel</span>
+                <FileSpreadsheet className="w-3.5 h-3.5 text-purple-200" />
+                <span className="font-mono text-[11px] font-bold">Excel</span>
               </button>
               <button
                 type="button"
                 id="btn-export-groupby-csv"
                 onClick={() => handleExportGroupBy('csv')}
-                className="px-2.5 py-2.5 text-xs font-bold text-white bg-purple-700 hover:bg-purple-800 border-y border-l border-purple-500 rounded-l-xl transition-all flex items-center gap-1 cursor-pointer border-r border-r-purple-600"
+                className="px-2.5 py-2.5 text-xs font-bold text-white bg-purple-800 hover:bg-purple-900 border-y border-l border-purple-600 rounded-l-xl transition-all flex items-center gap-1 cursor-pointer border-r border-r-purple-700"
                 title="تصدير تقرير الحركات المنَسَّق بصيغة CSV"
               >
                 <span className="font-mono text-[10px] font-bold">CSV</span>
@@ -581,6 +594,14 @@ export default function App() {
         rows={rawData}
         isOpen={isRawViewerOpen}
         onClose={() => setIsRawViewerOpen(false)}
+      />
+
+      <GroupByReportModal
+        isOpen={isGroupByModalOpen}
+        onClose={() => setIsGroupByModalOpen(false)}
+        dataset={searchQuery.trim() ? filteredData : aggregatedData}
+        searchQuery={searchQuery}
+        totalRawCount={rawData.length}
       />
     </div>
   );

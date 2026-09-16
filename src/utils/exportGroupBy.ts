@@ -1,4 +1,5 @@
 import { AggregatedShipment } from '../types';
+import { formatDisplayCode } from './printGroupByReport';
 
 /**
  * دالة مساعدة لترميز النصوص وتأمين إخراج HTML نظيف لملف Excel
@@ -14,29 +15,35 @@ function escapeHtml(str: unknown): string {
 }
 
 /**
- * تصدير تقرير الحركات (Group-By Export) بصيغة Excel ملون ومظلل هيدرات احترافية
+ * الأعمدة الـ 12 المرتبة بدقة متطابقة تماماً مع مواصفات تقرير الحركات المنسق (Group-By Code)
+ */
+export const GROUP_BY_12_HEADERS = [
+  'التسلسل',
+  'رقم الحاوية',
+  'نوع الشحنة',
+  'رقم الفاتورة',
+  'نوع البضاعة',
+  'بيان الحركة',
+  'عدد الكراتين',
+  'الوزن كجم',
+  'الحجم CBM',
+  'سعر البيع $',
+  'مبلغ الجمرك $',
+  'الكود الرئيسي',
+];
+
+/**
+ * تصدير تقرير الحركات (Group-By Export) بصيغة Excel ملون ومظلل بهيدرات وتنسيق محاسبي راقي
  * 
- * المعايير الصارمة:
- * 1. 12 عموداً فريداً وغير مكرر تماماً بدون تداخل أو تكرار لقيم الجمرك أو سعر البيع.
- * 2. تظليل بارز وأنيق للصفوف الرئيسية، الحركات الفرعية، ومجموع كل كود.
- * 3. تطابق كامل في عدد الأعمدة عبر جميع الصفوف لمنع أي إزاحة أو تشويه في الجداول.
+ * المعايير:
+ * 1. عنوان التقرير البارز: "تقرير تجميع الشحنات والحركات التفصيلي (Group-By Code)"
+ * 2. شريط معلومات التقرير العلوي (تاريخ الإصدار، إجمالي الحركات، إجمالي الكراتين، وإجمالي الجمرك).
+ * 3. 12 عموداً مرتبة بدقة.
+ * 4. الشرط الأساسي لعرض الكود: كتابة الكود حصراً داخل أقواس واضحة: (B133).
+ * 5. التنسيق اللوني: تظليل دافئ وناعم للصفوف الرئيسية والمجاميع، وزيبرا سترابينغ للحركات الفرعية، وصف داكن للمجموع النهائي.
  */
 export function exportGroupByExcel(dataset: AggregatedShipment[]) {
-  // 12 عموداً فريداً ومحدداً بدقة بدون تكرار
-  const headers = [
-    'نوع السجل / البيان',
-    'الكود (Code)',
-    'رقم الحاوية (Container)',
-    'نوع الشحنة (Type)',
-    'رقم الحركة / التسلسل',
-    'نوع البضاعة (Goods Type)',
-    'عدد الكراتين (Cartons)',
-    'الوزن كجم (Weight)',
-    'الحجم CBM (Volume)',
-    'سعر البيع $ (Selling Price)',
-    'مبلغ الجمرك $ (Customs USD)',
-    'رقم الفاتورة (Invoice No)',
-  ];
+  const headers = GROUP_BY_12_HEADERS;
 
   let grandCartons = 0;
   let grandWeight = 0;
@@ -53,6 +60,8 @@ export function exportGroupByExcel(dataset: AggregatedShipment[]) {
     grandCustoms += group.totalCustomsUSD;
     grandSubItemsCount += group.items.length;
 
+    const formattedCode = formatDisplayCode(group.code);
+
     // التحقق من قاعدة عدم التكرار (Single-Movement Clean Logic)
     if (group.items.length === 1) {
       // 1. الكود يحتوي على حركة فرعية واحدة فقط -> سطر واحد فقط نظيف ومباشر بدون تكرار
@@ -61,37 +70,37 @@ export function exportGroupByExcel(dataset: AggregatedShipment[]) {
 
       bodyHtml += `
         <tr class="single-row">
-          <td class="text-right font-bold single-level-cell">● حركة مستقلة [${groupIdx + 1}]</td>
-          <td class="text-center font-bold code-cell">${escapeHtml(group.code)}</td>
+          <td class="text-center font-bold seq-cell">${groupIdx + 1}</td>
           <td class="text-center font-bold">${escapeHtml(group.containerNo || '-')}</td>
           <td class="text-center font-bold">${escapeHtml(group.shipmentType)}</td>
-          <td class="text-center font-mono text-slate">${escapeHtml(sub.no || 1)}</td>
+          <td class="text-center font-mono">${escapeHtml(sub.invoiceNo || '-')}</td>
           <td class="text-right font-medium">${escapeHtml(sub.goodsType || '-')}</td>
+          <td class="text-right single-level-cell">● حركة مستقلة</td>
           <td class="text-center font-bold num-cell">${group.totalCartons.toLocaleString('en-US')}</td>
           <td class="text-center font-bold num-cell">${group.totalWeight.toFixed(2)}</td>
           <td class="text-center font-bold num-cell">${group.totalVolume.toFixed(3)}</td>
           <td class="text-center font-bold num-cell">$${(Number(sub.sellingPriceUSD) || group.sellingPriceUSD || 325.0).toFixed(2)}</td>
           <td class="text-left font-bold customs-cell">$${customsVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-          <td class="text-center font-mono">${escapeHtml(sub.invoiceNo || '-')}</td>
+          <td class="text-center font-bold code-cell">${escapeHtml(formattedCode)}</td>
         </tr>
       `;
     } else {
       // 2. الكود يحتوي على حركتين أو أكثر -> الحفاظ على سلوك العرض المجمع الطبيعي الكامل
-      // أ. صف الكود الرئيسي المجمّع (تظليل أزرق باستيل احترافي مع خط عريض)
+      // أ. صف الكود الرئيسي المجمّع (تظليل دافئ وناعم بلون كهرماني/أصفر فاتح مع خط عريض)
       bodyHtml += `
         <tr class="master-row">
-          <td class="text-right font-bold level-cell">▶ كود رئيسي مجمّع [${groupIdx + 1}]</td>
-          <td class="text-center font-bold code-cell">${escapeHtml(group.code)}</td>
+          <td class="text-center font-bold seq-cell">${groupIdx + 1}</td>
           <td class="text-center font-bold">${escapeHtml(group.containerNo || '-')}</td>
           <td class="text-center font-bold">${escapeHtml(group.shipmentType)}</td>
-          <td class="text-center font-bold text-slate">إجمالي ${group.items.length} حركات</td>
-          <td class="text-right font-bold">[كافة بضائع الكود: ${escapeHtml(group.code)}]</td>
+          <td class="text-center font-bold text-slate">-</td>
+          <td class="text-right font-bold">كافة بضائع الكود ${escapeHtml(formattedCode)}</td>
+          <td class="text-right font-bold level-cell">▶ كود رئيسي مجمّع (${group.items.length} حركات)</td>
           <td class="text-center font-bold num-cell">${group.totalCartons.toLocaleString('en-US')}</td>
           <td class="text-center font-bold num-cell">${group.totalWeight.toFixed(2)}</td>
           <td class="text-center font-bold num-cell">${group.totalVolume.toFixed(3)}</td>
           <td class="text-center font-bold num-cell">$${(group.sellingPriceUSD ?? 325.0).toFixed(2)}</td>
           <td class="text-left font-bold customs-cell">$${group.totalCustomsUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-          <td class="text-center font-bold">-</td>
+          <td class="text-center font-bold code-cell">${escapeHtml(formattedCode)}</td>
         </tr>
       `;
 
@@ -103,41 +112,41 @@ export function exportGroupByExcel(dataset: AggregatedShipment[]) {
 
         bodyHtml += `
           <tr class="${rowClass}">
-            <td class="text-right sub-level-cell">&nbsp;&nbsp;&nbsp;↳ حركة فرعية (#${subIdx + 1})</td>
-            <td class="text-center font-mono text-slate">${escapeHtml(group.code)}</td>
+            <td class="text-center font-mono text-slate seq-cell">${groupIdx + 1}.${subIdx + 1}</td>
             <td class="text-center text-slate">${escapeHtml(group.containerNo || '-')}</td>
             <td class="text-center text-slate">${escapeHtml(group.shipmentType)}</td>
-            <td class="text-center text-slate font-mono">${escapeHtml(sub.no || subIdx + 1)}</td>
+            <td class="text-center font-mono text-slate">${escapeHtml(sub.invoiceNo || '-')}</td>
             <td class="text-right">${escapeHtml(sub.goodsType || '-')}</td>
+            <td class="text-right sub-level-cell">&nbsp;&nbsp;&nbsp;↳ حركة فرعية #${subIdx + 1}</td>
             <td class="text-center font-bold">${sub.cartons}</td>
             <td class="text-center">${Number(sub.weight || 0).toFixed(2)}</td>
             <td class="text-center">${Number(sub.volume || 0).toFixed(3)}</td>
             <td class="text-center">$${(Number(sub.sellingPriceUSD) || 325.0).toFixed(2)}</td>
             <td class="text-left font-bold sub-customs-cell">$${customsVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-            <td class="text-center font-mono">${escapeHtml(sub.invoiceNo || '-')}</td>
+            <td class="text-center font-mono text-slate">${escapeHtml(formattedCode)}</td>
           </tr>
         `;
       });
 
-      // ج. صف المجموع الفرعي الخاص بكل كود (تظليل كهرماني/أصفر دافئ + خط عريض بارز)
+      // ج. صف المجموع الفرعي الخاص بكل كود (تظليل دافئ وناعم + خط عريض بارز)
       bodyHtml += `
         <tr class="subtotal-row">
-          <td class="text-right font-bold">∑ مجموع الكود (${escapeHtml(group.code)})</td>
-          <td class="text-center font-bold">${escapeHtml(group.code)}</td>
+          <td class="text-center font-bold seq-cell">∑</td>
           <td class="text-center font-bold">${escapeHtml(group.containerNo || '-')}</td>
           <td class="text-center font-bold">${escapeHtml(group.shipmentType)}</td>
-          <td class="text-center font-bold">${group.items.length} حركات فرعية</td>
-          <td class="text-right font-bold">--- ملخص إجمالي الكود ---</td>
+          <td class="text-center font-bold text-muted">-</td>
+          <td class="text-right font-bold">ملخص إجمالي الكود</td>
+          <td class="text-right font-bold">مجموع الكود ${escapeHtml(formattedCode)}</td>
           <td class="text-center font-bold num-cell">${group.totalCartons.toLocaleString('en-US')}</td>
           <td class="text-center font-bold num-cell">${group.totalWeight.toFixed(2)}</td>
           <td class="text-center font-bold num-cell">${group.totalVolume.toFixed(3)}</td>
           <td class="text-center font-bold text-muted">-</td>
           <td class="text-left font-bold customs-cell">$${group.totalCustomsUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-          <td class="text-center font-bold text-muted">-</td>
+          <td class="text-center font-bold code-cell">${escapeHtml(formattedCode)}</td>
         </tr>
       `;
 
-      // سطر فاصل ناعم بين كل كود وآخر للأكواد المتعددة
+      // سطر فاصل ناعم بين كل كود وآخر
       bodyHtml += `
         <tr class="separator-row">
           <td colspan="12" class="separator-cell">&nbsp;</td>
@@ -146,25 +155,32 @@ export function exportGroupByExcel(dataset: AggregatedShipment[]) {
     }
   });
 
-  // 4. صف الإجمالي العام لجميع الأكواد والحركات (تظليل كحلي داكن فاخر + خط عريض ملون)
+  // 4. صف الإجمالي العام النهائي في أسفل الجدول (تظليل كحلي داكن فاخر + خط عريض ملون)
   const grandTotalHtml = `
     <tr class="grandtotal-row">
-      <td class="text-right font-bold">=== الإجمالي العام لكافة الأكواد ===</td>
-      <td class="text-center font-bold">${dataset.length} كود مجمّع</td>
+      <td class="text-center font-bold seq-cell">===</td>
       <td class="text-center font-bold">-</td>
       <td class="text-center font-bold">-</td>
-      <td class="text-center font-bold">${grandSubItemsCount} حركة فرعية إجمالية</td>
-      <td class="text-right font-bold">إجمالي كافة البضائع والسجلات</td>
+      <td class="text-center font-bold">-</td>
+      <td class="text-right font-bold">إجمالي كافة السجلات</td>
+      <td class="text-right font-bold grand-title">الإجمالي العام (${dataset.length} كود / ${grandSubItemsCount} حركة)</td>
       <td class="text-center font-bold grand-num">${grandCartons.toLocaleString('en-US')}</td>
-      <td class="text-center font-bold grand-num">${grandWeight.toFixed(2)}</td>
-      <td class="text-center font-bold grand-num">${grandVolume.toFixed(3)}</td>
+      <td class="text-center font-bold grand-weight">${grandWeight.toFixed(2)}</td>
+      <td class="text-center font-bold grand-volume">${grandVolume.toFixed(3)}</td>
       <td class="text-center font-bold text-muted">-</td>
       <td class="text-left font-bold grand-customs">$${grandCustoms.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-      <td class="text-center font-bold text-muted">-</td>
+      <td class="text-center font-bold grand-code">(${dataset.length} كود)</td>
     </tr>
   `;
 
-  // بناء كود HTML المتكامل مع أنماط التظليل المحاسبية المخصصة لـ Microsoft Excel
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('ar-EG', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  // بناء كود HTML المتكامل لـ Microsoft Excel مع التنسيق الدافئ والناعم
   const excelHtml = `
     <html xmlns:o="urn:schemas-microsoft-com:office:office" 
           xmlns:x="urn:schemas-microsoft-com:office:excel" 
@@ -199,7 +215,7 @@ export function exportGroupByExcel(dataset: AggregatedShipment[]) {
           direction: rtl;
         }
         th {
-          background-color: #1e293b;
+          background-color: #0f172a;
           color: #ffffff;
           font-weight: bold;
           font-size: 11pt;
@@ -209,45 +225,46 @@ export function exportGroupByExcel(dataset: AggregatedShipment[]) {
           white-space: nowrap;
         }
         td {
-          padding: 8px 8px;
+          padding: 7px 8px;
           font-size: 10pt;
           border: 1px solid #cbd5e1;
           vertical-align: middle;
         }
         
-        /* ترويسة التقرير في أعلى الملف */
+        /* ترويسة التقرير في أعلى الملف (Report Header) */
         .report-header-title {
           font-size: 18pt;
-          font-weight: bold;
-          color: #0f172a;
+          font-weight: 900;
+          color: #ffffff;
           text-align: center;
           padding: 16px;
-          background-color: #f8fafc;
-          border-bottom: 2px solid #0284c7;
+          background-color: #0f172a;
+          border-bottom: 2px solid #38bdf8;
         }
         .report-meta-box {
-          font-size: 10pt;
-          color: #475569;
-          text-align: right;
-          padding: 8px 12px;
-          background-color: #f1f5f9;
+          font-size: 10.5pt;
+          color: #1e293b;
+          padding: 10px 14px;
+          background-color: #f8fafc;
+          border-bottom: 1px solid #cbd5e1;
         }
 
-        /* 1. تظليل صف الكود الرئيسي */
+        /* 1. تظليل صف الكود الرئيسي (تنسيق دافئ وناعم) */
         .master-row td {
-          background-color: #dbeafe;
-          color: #1e3a8a;
+          background-color: #fffbeb !important;
+          color: #78350f !important;
+          font-weight: bold;
           font-size: 10.5pt;
-          border-top: 2px solid #2563eb;
-          border-bottom: 1px solid #93c5fd;
+          border-top: 2px solid #f59e0b;
+          border-bottom: 1px solid #fde68a;
         }
         .level-cell {
-          background-color: #bfdbfe !important;
-          color: #1e3a8a !important;
+          background-color: #fef3c7 !important;
+          color: #92400e !important;
           font-weight: bold;
         }
         .code-cell {
-          color: #1d4ed8;
+          color: #0369a1 !important;
           font-weight: bold;
           font-size: 11pt;
         }
@@ -261,7 +278,7 @@ export function exportGroupByExcel(dataset: AggregatedShipment[]) {
           font-size: 11pt;
         }
 
-        /* 1.5. تظليل سطر الحركة المفردة المستقلة (Single-Movement Clean Row) */
+        /* سطر الحركة المفردة المستقلة (Single-Movement Clean Row) */
         .single-row td {
           background-color: #ffffff;
           color: #1e293b;
@@ -274,7 +291,7 @@ export function exportGroupByExcel(dataset: AggregatedShipment[]) {
           font-weight: bold;
         }
 
-        /* 2. تظليل صفوف الحركات الفرعية */
+        /* 2. تظليل صفوف الحركات الفرعية (Zebra Striping) */
         .sub-row-even td {
           background-color: #ffffff;
           color: #334155;
@@ -295,38 +312,50 @@ export function exportGroupByExcel(dataset: AggregatedShipment[]) {
           font-weight: bold;
         }
 
-        /* 3. تظليل صف مجموع الكود */
+        /* 3. تظليل صف مجموع الكود (تنسيق دافئ وناعم) */
         .subtotal-row td {
-          background-color: #fef3c7;
-          color: #92400e;
+          background-color: #fef3c7 !important;
+          color: #78350f !important;
           font-weight: bold;
           font-size: 10.5pt;
           border-top: 1px dashed #d97706;
-          border-bottom: 2px solid #d97706;
+          border-bottom: 2px solid #b45309;
         }
 
-        /* 4. تظليل صف الإجمالي العام */
+        /* 4. تظليل صف الإجمالي العام النهائي في الأسفل */
         .grandtotal-row td {
-          background-color: #0f172a;
-          color: #ffffff;
+          background-color: #0f172a !important;
+          color: #ffffff !important;
           font-weight: bold;
           font-size: 11.5pt;
           border-top: 3px double #38bdf8;
           border-bottom: 3px double #38bdf8;
         }
+        .grand-title {
+          color: #38bdf8;
+        }
         .grand-num {
           color: #facc15;
           font-size: 12pt;
         }
+        .grand-weight {
+          color: #7dd3fc;
+        }
+        .grand-volume {
+          color: #f472b6;
+        }
         .grand-customs {
-          color: #34d399;
+          color: #4ade80;
           font-size: 13pt;
+        }
+        .grand-code {
+          color: #facc15;
         }
 
         /* سطر فاصل ناعم */
         .separator-row td {
-          background-color: #f1f5f9;
-          height: 8px;
+          background-color: #f8fafc;
+          height: 6px;
           padding: 0;
           border: none;
         }
@@ -348,15 +377,19 @@ export function exportGroupByExcel(dataset: AggregatedShipment[]) {
               تقرير تجميع الشحنات والحركات التفصيلي (Group-By Code)
             </td>
           </tr>
+          <!-- شريط معلومات التقرير العلوي (تاريخ الإصدار، إجمالي الحركات، إجمالي الكراتين، وإجمالي الجمرك) -->
           <tr>
-            <td colspan="6" class="report-meta-box">
-              <strong>تاريخ الإصدار:</strong> ${new Date().toISOString().slice(0, 10)} | 
-              <strong>إجمالي الأكواد:</strong> ${dataset.length} كود | 
-              <strong>إجمالي الحركات:</strong> ${grandSubItemsCount} حركة
+            <td colspan="3" class="report-meta-box">
+              <strong>تاريخ الإصدار:</strong> ${dateStr}
             </td>
-            <td colspan="6" class="report-meta-box" style="text-align: left;">
-              <strong>إجمالي الكراتين:</strong> ${grandCartons.toLocaleString('en-US')} | 
-              <strong>إجمالي الجمرك ($):</strong> $${grandCustoms.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            <td colspan="3" class="report-meta-box">
+              <strong>إجمالي الحركات:</strong> ${grandSubItemsCount} حركة (${dataset.length} كود)
+            </td>
+            <td colspan="3" class="report-meta-box">
+              <strong>إجمالي الكراتين:</strong> ${grandCartons.toLocaleString('en-US')} كرتونة
+            </td>
+            <td colspan="3" class="report-meta-box" style="text-align: left;">
+              <strong>إجمالي الجمرك:</strong> $${grandCustoms.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </td>
           </tr>
           <tr>
@@ -392,21 +425,7 @@ export function exportGroupByExcel(dataset: AggregatedShipment[]) {
  * تصدير تقرير الحركات (Group-By Export) بصيغة CSV قياسية ومطابقة تماماً لـ 12 عموداً
  */
 export function exportGroupByCSV(dataset: AggregatedShipment[]) {
-  // نفس الـ 12 عموداً بالضبط لمنع أي اختلاف أو تكرار
-  const headers = [
-    'نوع السجل / البيان',
-    'الكود (Code)',
-    'رقم الحاوية (Container)',
-    'نوع الشحنة (Type)',
-    'رقم الحركة / التسلسل',
-    'نوع البضاعة (Goods Type)',
-    'عدد الكراتين (Cartons)',
-    'الوزن كجم (Weight)',
-    'الحجم CBM (Volume)',
-    'سعر البيع $ (Selling Price)',
-    'مبلغ الجمرك $ (Customs USD)',
-    'رقم الفاتورة (Invoice No)',
-  ];
+  const headers = GROUP_BY_12_HEADERS;
 
   const formatCell = (val: string | number | undefined | null) => {
     const str = String(val ?? '');
@@ -430,74 +449,76 @@ export function exportGroupByCSV(dataset: AggregatedShipment[]) {
     grandCustoms += group.totalCustomsUSD;
     grandSubItemsCount += group.items.length;
 
+    const formattedCode = formatDisplayCode(group.code);
+
     // التحقق من قاعدة عدم التكرار (Single-Movement Clean Logic)
     if (group.items.length === 1) {
       // الكود يحتوي على حركة فرعية واحدة فقط -> سطر واحد مباشر بدون تكرار
       const sub = group.items[0];
       rows.push([
-        `● حركة مستقلة [${groupIdx + 1}]`,
-        group.code,
+        groupIdx + 1,
         group.containerNo || '-',
         group.shipmentType,
-        sub.no || 1,
+        sub.invoiceNo || '-',
         sub.goodsType || '-',
+        '● حركة مستقلة',
         group.totalCartons,
         group.totalWeight.toFixed(2),
         group.totalVolume.toFixed(3),
         `$${(Number(sub.sellingPriceUSD) || group.sellingPriceUSD || 325.0).toFixed(2)}`,
         `$${group.totalCustomsUSD.toFixed(2)}`,
-        sub.invoiceNo || '-',
+        formattedCode,
       ]);
     } else {
       // الكود يحتوي على حركتين أو أكثر -> الحفاظ على الهيكل المجمع الكامل
-      // 1. صف الكود الرئيسي المجمع (Master Code Row) - 12 عموداً بدقة
+      // 1. صف الكود الرئيسي المجمع (Master Code Row)
       rows.push([
-        `▶ كود رئيسي مجمّع [${groupIdx + 1}]`,
-        group.code,
+        groupIdx + 1,
         group.containerNo || '-',
         group.shipmentType,
-        `إجمالي ${group.items.length} حركات`,
-        `[كافة بضائع الكود: ${group.code}]`,
+        '-',
+        `كافة بضائع الكود ${formattedCode}`,
+        `▶ كود رئيسي مجمّع (${group.items.length} حركات)`,
         group.totalCartons,
         group.totalWeight.toFixed(2),
         group.totalVolume.toFixed(3),
         `$${(group.sellingPriceUSD ?? 325.0).toFixed(2)}`,
         `$${group.totalCustomsUSD.toFixed(2)}`,
-        '-',
+        formattedCode,
       ]);
 
-      // 2. صفوف الحركات والسجلات الفرعية المرتبطة بهذا الكود (Sub-Items Grouped) - 12 عموداً بدقة
+      // 2. صفوف الحركات والسجلات الفرعية المرتبطة بهذا الكود (Sub-Items Grouped)
       group.items.forEach((sub, subIdx) => {
         rows.push([
-          `   ↳ حركة فرعية (#${subIdx + 1})`,
-          group.code,
+          `${groupIdx + 1}.${subIdx + 1}`,
           group.containerNo || '-',
           group.shipmentType,
-          sub.no || subIdx + 1,
+          sub.invoiceNo || '-',
           sub.goodsType || '-',
+          `   ↳ حركة فرعية #${subIdx + 1}`,
           sub.cartons,
           Number(sub.weight || 0).toFixed(2),
           Number(sub.volume || 0).toFixed(3),
           `$${(Number(sub.sellingPriceUSD) || 325.0).toFixed(2)}`,
           `$${Number(sub.customsAmountUSD || 0).toFixed(2)}`,
-          sub.invoiceNo || '-',
+          formattedCode,
         ]);
       });
 
-      // 3. صف المجموع الفرعي الخاص بهذا الكود (Sub-Total Row) - 12 عموداً بدقة
+      // 3. صف المجموع الفرعي الخاص بهذا الكود (Sub-Total Row)
       rows.push([
-        `∑ مجموع الكود (${group.code})`,
-        group.code,
+        '∑',
         group.containerNo || '-',
         group.shipmentType,
-        `${group.items.length} حركات فرعية`,
-        `--- ملخص إجمالي الكود ---`,
+        '-',
+        'ملخص إجمالي الكود',
+        `مجموع الكود ${formattedCode}`,
         group.totalCartons,
         group.totalWeight.toFixed(2),
         group.totalVolume.toFixed(3),
         '-',
         `$${group.totalCustomsUSD.toFixed(2)}`,
-        '-',
+        formattedCode,
       ]);
 
       // سطر فاصل فارغ (12 عموداً فارغاً) بين كل كود وآخر
@@ -505,20 +526,20 @@ export function exportGroupByCSV(dataset: AggregatedShipment[]) {
     }
   });
 
-  // 4. صف الإجمالي العام النهائي (Grand Total Row) - 12 عموداً بدقة
+  // 4. صف الإجمالي العام النهائي (Grand Total Row)
   rows.push([
-    '=== الإجمالي العام لكافة الأكواد ===',
-    `${dataset.length} كود مجمّع`,
+    '===',
     '-',
     '-',
-    `${grandSubItemsCount} حركة فرعية إجمالية`,
-    'إجمالي كافة البضائع والسجلات',
+    '-',
+    'إجمالي كافة السجلات',
+    `الإجمالي العام (${dataset.length} كود / ${grandSubItemsCount} حركة)`,
     grandCartons,
     grandWeight.toFixed(2),
     grandVolume.toFixed(3),
     '-',
     `$${grandCustoms.toFixed(2)}`,
-    '-',
+    `(${dataset.length} كود)`,
   ]);
 
   const csvContent =
@@ -544,7 +565,6 @@ export function exportGroupByCSV(dataset: AggregatedShipment[]) {
 
 /**
  * الدالة الرئيسية لتصدير تقرير الحركات (Group-By Export)
- * تتيح اختيار التنسيق ('excel' الافتراضي المنسق والمظلل، أو 'csv' النصي)
  */
 export function exportGroupByReport(
   dataset: AggregatedShipment[],

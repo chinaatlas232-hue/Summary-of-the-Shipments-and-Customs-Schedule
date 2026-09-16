@@ -141,8 +141,8 @@ export const ShipmentTable: React.FC<ShipmentTableProps> = ({
                     {/* 1. الكود */}
                     <td className="py-3.5 px-4 font-bold font-mono text-indigo-950 text-base">
                       <div className="flex items-center gap-2">
-                        <span className="bg-indigo-100/70 text-indigo-900 px-2.5 py-1 rounded-md text-sm border border-indigo-200 font-mono font-bold">
-                          {row.code}
+                        <span className="bg-indigo-100/70 text-indigo-900 px-2.5 py-1 rounded-md text-sm border border-indigo-200 font-mono font-bold tracking-wide">
+                          ({row.code})
                         </span>
                         {row.rowCount > 1 && (
                           <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-sans border border-slate-200">
@@ -241,8 +241,8 @@ export const ShipmentTable: React.FC<ShipmentTableProps> = ({
                                   <h4 className="font-bold text-sm sm:text-base text-white tracking-wide">
                                     تقرير تفصيلي للحركات الفرعية المدمجة
                                   </h4>
-                                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-500/30 text-indigo-200 border border-indigo-400/30">
-                                    الكود: {row.code}
+                                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-500/30 text-indigo-200 border border-indigo-400/30 font-mono">
+                                    الكود: ({row.code})
                                   </span>
                                   <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-700 text-slate-200 border border-slate-600">
                                     الحاوية: {row.containerNo || '-'}
