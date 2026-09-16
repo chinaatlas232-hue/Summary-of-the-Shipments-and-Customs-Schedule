@@ -180,6 +180,7 @@ export const ShipmentTable: React.FC<ShipmentTableProps> = ({ items }) => {
                                   <th className="py-2 px-3 text-center">الوزن (كجم)</th>
                                   <th className="py-2 px-3 text-center">الحجم (CBM)</th>
                                   <th className="py-2 px-3">الموظف (Staff)</th>
+                                  <th className="py-2 px-3 text-center">سعر البيع ($)</th>
                                   <th className="py-2 px-3 text-left">مبلغ الجمرك ($)</th>
                                   <th className="py-2 px-3">رقم قيد الادخال</th>
                                   <th className="py-2 px-3">رقم الفاتورة</th>
@@ -196,6 +197,7 @@ export const ShipmentTable: React.FC<ShipmentTableProps> = ({ items }) => {
                                     <td className="py-2 px-3 text-center font-mono">{subItem.weight.toFixed(2)}</td>
                                     <td className="py-2 px-3 text-center font-mono">{subItem.volume.toFixed(3)}</td>
                                     <td className="py-2 px-3 text-slate-600">{subItem.staff}</td>
+                                    <td className="py-2 px-3 text-center font-mono font-medium text-slate-700">${(subItem.sellingPriceUSD || 325.00).toFixed(2)}</td>
                                     <td className="py-2 px-3 text-left font-mono font-bold text-emerald-700">${subItem.customsAmountUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                     <td className="py-2 px-3 font-mono text-slate-600">{subItem.entryNo}</td>
                                     <td className="py-2 px-3 font-mono text-slate-600">{subItem.invoiceNo}</td>

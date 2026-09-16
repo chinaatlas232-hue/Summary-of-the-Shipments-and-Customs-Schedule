@@ -19,6 +19,14 @@ export interface RawShipmentRow {
   invoiceNo: string;
   sellingPriceUSD: number;
   customsAmountUSD: number;
+  customerName?: string;
+  phone?: string;
+  address?: string;
+  sponsor?: string;
+  notes?: string;
+  status?: string;
+  receivedDate?: string;
+  [key: string]: unknown;
 }
 
 export interface AggregatedShipment {
@@ -29,6 +37,7 @@ export interface AggregatedShipment {
   containerNo: string;           // 5. رقم الحاوية (أو الشحنة)
   shipmentType: string;          // 6. نوع الشحنة ("بحري" إذا بدأ بـ RQ، و"شحنة جوية" إذا بدأ بـ RA)
   totalCustomsUSD: number;       // 7. مبلغ الجمرك ($ حصرياً)
+  sellingPriceUSD: number;       // سعر البيع بالدولار (مستخرج من الجدول)
   rowCount: number;
   items: RawShipmentRow[];
 }

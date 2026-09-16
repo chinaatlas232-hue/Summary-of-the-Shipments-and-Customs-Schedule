@@ -8,6 +8,7 @@ import {
   Ship,
   Sparkles,
   FileSpreadsheet,
+  X,
 } from 'lucide-react';
 import { RawShipmentRow } from './types';
 import {
@@ -35,18 +36,47 @@ export default function App() {
     return aggregateShipments(rawData);
   }, [rawData]);
 
-  // Filter based on search query in real-time (Search As You Type)
+  // Filter based on search query in real-time (Smart Search As You Type)
   const isFiltered = Boolean(searchQuery.trim());
 
   const filteredData = useMemo(() => {
     if (!searchQuery.trim()) return aggregatedData;
     const q = searchQuery.toLowerCase().trim();
-    return aggregatedData.filter(
-      (item) =>
-        item.code.toLowerCase().includes(q) ||
-        item.containerNo.toLowerCase().includes(q) ||
-        item.shipmentType.toLowerCase().includes(q)
-    );
+
+    return aggregatedData.filter((item) => {
+      // 1. فحص جميع حقول السجل المجمع (سواء نصية أو رقمية أو بصيغة العملة/الكسور)
+      const aggregatedFieldsMatch = [
+        item.code,
+        item.containerNo,
+        item.shipmentType,
+        item.totalCartons?.toString(),
+        item.totalWeight?.toString(),
+        item.totalWeight?.toFixed(2),
+        item.totalVolume?.toString(),
+        item.totalVolume?.toFixed(3),
+        item.totalCustomsUSD?.toString(),
+        item.totalCustomsUSD?.toFixed(2),
+        `$${item.totalCustomsUSD?.toFixed(2)}`,
+        item.sellingPriceUSD?.toString(),
+        item.sellingPriceUSD?.toFixed(2),
+        `$${item.sellingPriceUSD?.toFixed(2)}`,
+      ].some((val) => val && val.toLowerCase().includes(q));
+
+      if (aggregatedFieldsMatch) return true;
+
+      // 2. البحث العميق والشامل في كافة الأعمدة والحقول داخل السجلات الأصلية الفرعية المدمجة دون استثناء
+      return item.items.some((sub) => {
+        // فحص تلقائي لكافة مفاتيح وقيم الكائن
+        for (const key of Object.keys(sub)) {
+          const val = sub[key];
+          if (val !== null && val !== undefined) {
+            const strVal = String(val).toLowerCase();
+            if (strVal.includes(q)) return true;
+          }
+        }
+        return false;
+      });
+    });
   }, [aggregatedData, searchQuery]);
 
   // Count raw sub-shipments represented in currently filtered data
@@ -82,7 +112,7 @@ export default function App() {
       item.totalWeight.toFixed(2), // الوزن
       item.totalCartons,           // عدد الكارتون
       item.totalVolume.toFixed(3), // حجم
-      "$300.00",                   // سعر البيع الثابت
+      `$${(item.sellingPriceUSD ?? 325.00).toFixed(2)}`, // سعر البيع (مستخرج ومتابع دائماً من الجدول)
       `$${item.totalCustomsUSD.toFixed(2)}`, // مبلغ الجمرك
       "",                          // الاسم (فارغ)
       "",                          // رقم الهاتف (فارغ)
@@ -216,28 +246,42 @@ export default function App() {
 
         {/* Action Toolbar */}
         <div className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
-          {/* Search bar */}
-          <div className="relative flex-1 max-w-md">
-            <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              id="search-input"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="البحث الفوري (أدخل كود مثل B12، رقم الحاوية، أو نوع الشحنة)..."
-              className="w-full pr-10 pl-16 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-hidden transition-all"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                id="btn-clear-search"
-                onClick={() => setSearchQuery('')}
-                className="absolute left-3 top-1/2 -translate-y-1/2 px-1.5 py-0.5 bg-slate-200/80 hover:bg-slate-300 text-slate-600 rounded text-[10px] font-medium transition-colors"
-                title="إلغاء التصفية"
-              >
-                مسح
-              </button>
-            )}
+          {/* Search bar with smart search capabilities */}
+          <div className="flex-1 max-w-xl">
+            <div className="relative flex items-center">
+              <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                id="search-input"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="البحث الذكي والشامل: ابحث عن كود، رقم حاوية، فاتورة، اسم، أو أي تفاصيل أخرى..."
+                className="w-full pr-10 pl-24 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-hidden transition-all shadow-2xs placeholder:text-slate-400 font-['Cairo',sans-serif]"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  id="btn-clear-search"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 inline-flex items-center gap-1 px-2.5 py-1 bg-slate-200/90 hover:bg-rose-100 hover:text-rose-700 text-slate-700 rounded-lg text-xs font-semibold transition-all shadow-2xs cursor-pointer"
+                  title="إلغاء التصفية وإعادة عرض كافة البيانات"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  <span>مسح</span>
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center justify-between text-[11px] text-slate-500 mt-1.5 px-1 font-['Tajawal','Cairo',sans-serif] gap-2">
+              <div className="flex items-center gap-1.5">
+                <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>بحث فوري ولحظي في جميع الحقول والبيانات الأصلية (Search As You Type)</span>
+              </div>
+              {isFiltered && (
+                <span className="text-indigo-700 font-bold bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100/80">
+                  تم العثور على {filteredData.length} كود مجمّع ({currentRawCount} شحنة فرعية)
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Export to Excel action button */}

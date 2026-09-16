@@ -20,7 +20,7 @@ export const INITIAL_RAW_DATA: RawShipmentRow[] = [
     invoiceAmountUSD: 1855,
     entryNo: 'PO-B12-260407-P02',
     invoiceNo: 'B12-102',
-    sellingPriceUSD: 300.00,
+    sellingPriceUSD: 325.00,
     customsAmountUSD: 153.90,
   },
   {
@@ -42,7 +42,7 @@ export const INITIAL_RAW_DATA: RawShipmentRow[] = [
     invoiceAmountUSD: 653,
     entryNo: 'PO-B12-260330-P03',
     invoiceNo: 'B12-90',
-    sellingPriceUSD: 300.00,
+    sellingPriceUSD: 325.00,
     customsAmountUSD: 29.40,
   },
   {
@@ -64,7 +64,7 @@ export const INITIAL_RAW_DATA: RawShipmentRow[] = [
     invoiceAmountUSD: 1602,
     entryNo: 'PO-B12-260401-P01',
     invoiceNo: 'B12-95',
-    sellingPriceUSD: 300.00,
+    sellingPriceUSD: 325.00,
     customsAmountUSD: 114.90,
   },
   {
@@ -86,7 +86,7 @@ export const INITIAL_RAW_DATA: RawShipmentRow[] = [
     invoiceAmountUSD: 0,
     entryNo: 'Client paid',
     invoiceNo: 'B1012-15',
-    sellingPriceUSD: 300.00,
+    sellingPriceUSD: 325.00,
     customsAmountUSD: 173.40,
   },
   {
@@ -108,7 +108,7 @@ export const INITIAL_RAW_DATA: RawShipmentRow[] = [
     invoiceAmountUSD: 3168,
     entryNo: 'PO-B12-260330-P06',
     invoiceNo: 'B12-93',
-    sellingPriceUSD: 300.00,
+    sellingPriceUSD: 325.00,
     customsAmountUSD: 115.20,
   },
   {
@@ -130,7 +130,7 @@ export const INITIAL_RAW_DATA: RawShipmentRow[] = [
     invoiceAmountUSD: 2922,
     entryNo: 'PO-B12-260328-P04',
     invoiceNo: 'B12-84',
-    sellingPriceUSD: 300.00,
+    sellingPriceUSD: 325.00,
     customsAmountUSD: 194.10,
   },
   {
@@ -152,7 +152,7 @@ export const INITIAL_RAW_DATA: RawShipmentRow[] = [
     invoiceAmountUSD: 6187,
     entryNo: 'PO-B12-260326-P06',
     invoiceNo: 'B12-73',
-    sellingPriceUSD: 300.00,
+    sellingPriceUSD: 325.00,
     customsAmountUSD: 529.20,
   },
   {
@@ -174,7 +174,7 @@ export const INITIAL_RAW_DATA: RawShipmentRow[] = [
     invoiceAmountUSD: 6067,
     entryNo: 'PO-B12-260330-P07',
     invoiceNo: 'B12-94',
-    sellingPriceUSD: 300.00,
+    sellingPriceUSD: 325.00,
     customsAmountUSD: 327.00,
   },
   {
@@ -196,7 +196,7 @@ export const INITIAL_RAW_DATA: RawShipmentRow[] = [
     invoiceAmountUSD: 1269,
     entryNo: 'PO-B12-260330-P01',
     invoiceNo: 'B12-88',
-    sellingPriceUSD: 300.00,
+    sellingPriceUSD: 325.00,
     customsAmountUSD: 201.00,
   },
   {
@@ -218,7 +218,7 @@ export const INITIAL_RAW_DATA: RawShipmentRow[] = [
     invoiceAmountUSD: 5086,
     entryNo: 'PO-B12-260326-P03',
     invoiceNo: 'B12-70',
-    sellingPriceUSD: 300.00,
+    sellingPriceUSD: 325.00,
     customsAmountUSD: 312.00,
   },
   {
@@ -240,7 +240,7 @@ export const INITIAL_RAW_DATA: RawShipmentRow[] = [
     invoiceAmountUSD: 3749,
     entryNo: 'PO-B12-260328-P07',
     invoiceNo: 'B12-87',
-    sellingPriceUSD: 300.00,
+    sellingPriceUSD: 325.00,
     customsAmountUSD: 256.20,
   },
   {
@@ -262,7 +262,7 @@ export const INITIAL_RAW_DATA: RawShipmentRow[] = [
     invoiceAmountUSD: 3591,
     entryNo: 'PO-B12-260326-P02',
     invoiceNo: 'B12-69',
-    sellingPriceUSD: 300.00,
+    sellingPriceUSD: 325.00,
     customsAmountUSD: 244.80,
   },
   {
@@ -284,7 +284,7 @@ export const INITIAL_RAW_DATA: RawShipmentRow[] = [
     invoiceAmountUSD: 2415,
     entryNo: 'PO-B12-260325-P05',
     invoiceNo: 'B12-64',
-    sellingPriceUSD: 300.00,
+    sellingPriceUSD: 325.00,
     customsAmountUSD: 324.60,
   },
   {
@@ -306,7 +306,7 @@ export const INITIAL_RAW_DATA: RawShipmentRow[] = [
     invoiceAmountUSD: 26000,
     entryNo: 'Client paid',
     invoiceNo: 'KB399-A1',
-    sellingPriceUSD: 300.00,
+    sellingPriceUSD: 325.00,
     customsAmountUSD: 2347.80,
   },
   {
@@ -328,7 +328,7 @@ export const INITIAL_RAW_DATA: RawShipmentRow[] = [
     invoiceAmountUSD: 1490,
     entryNo: 'PO-B1718-260401-P01',
     invoiceNo: 'B1718-21',
-    sellingPriceUSD: 300.00,
+    sellingPriceUSD: 325.00,
     customsAmountUSD: 125.10,
   },
 ];
@@ -368,6 +368,10 @@ export function aggregateShipments(rows: RawShipmentRow[]): AggregatedShipment[]
     // المفتاح المركب يضمن حصر التجميع داخل نفس الحاوية/الشحنة فقط
     const groupKey = `${containerNo.toUpperCase()}:::${code}`;
 
+    const rowSellingPrice = Number(row.sellingPriceUSD) && Number(row.sellingPriceUSD) > 0
+      ? Number(row.sellingPriceUSD)
+      : 325.00;
+
     const existing = map.get(groupKey);
     if (!existing) {
       map.set(groupKey, {
@@ -378,6 +382,7 @@ export function aggregateShipments(rows: RawShipmentRow[]): AggregatedShipment[]
         containerNo: containerNo,
         shipmentType: getShipmentType(containerNo),
         totalCustomsUSD: Number(row.customsAmountUSD) || 0,
+        sellingPriceUSD: rowSellingPrice,
         rowCount: 1,
         items: [row],
       });
@@ -386,6 +391,10 @@ export function aggregateShipments(rows: RawShipmentRow[]): AggregatedShipment[]
       existing.totalWeight += Number(row.weight) || 0;
       existing.totalVolume += Number(row.volume) || 0;
       existing.totalCustomsUSD += Number(row.customsAmountUSD) || 0;
+      // متابعة سعر البيع من الجدول إذا وجد في السجلات اللاحقة
+      if (Number(row.sellingPriceUSD) && Number(row.sellingPriceUSD) > 0) {
+        existing.sellingPriceUSD = Number(row.sellingPriceUSD);
+      }
       existing.rowCount += 1;
       existing.items.push(row);
     }
@@ -397,6 +406,7 @@ export function aggregateShipments(rows: RawShipmentRow[]): AggregatedShipment[]
     totalWeight: Number(item.totalWeight.toFixed(2)),
     totalVolume: Number(item.totalVolume.toFixed(3)),
     totalCustomsUSD: Number(item.totalCustomsUSD.toFixed(2)),
+    sellingPriceUSD: Number(item.sellingPriceUSD.toFixed(2)),
   }));
 }
 
@@ -409,6 +419,7 @@ export function parseTableText(text: string): RawShipmentRow[] {
 
   let headerFound = false;
   let customsIdx = -1;
+  let sellingPriceIdx = -1;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -437,6 +448,7 @@ export function parseTableText(text: string): RawShipmentRow[] {
     if (!headerFound && cells.some(c => c.includes('الكود') || c.toLowerCase().includes('code'))) {
       headerFound = true;
       customsIdx = cells.findIndex(c => c.includes('الجمرك') || c.toLowerCase().includes('custom'));
+      sellingPriceIdx = cells.findIndex(c => c.includes('سعر البيع') || c.toLowerCase().includes('selling'));
       continue;
     }
 
@@ -474,6 +486,15 @@ export function parseTableText(text: string): RawShipmentRow[] {
         customsAmountUSD = cleanNum(cells[6]);
       }
 
+      // Determine selling price from table
+      let sellingPriceUSD = 325.00;
+      if (sellingPriceIdx !== -1 && cells[sellingPriceIdx]) {
+        const parsed = cleanNum(cells[sellingPriceIdx]);
+        if (parsed > 0) sellingPriceUSD = parsed;
+      } else if (cells.length >= 19 && cleanNum(cells[18]) > 0) {
+        sellingPriceUSD = cleanNum(cells[18]);
+      }
+
       rows.push({
         no: parseInt(cells[0]) || rows.length + 1,
         code,
@@ -493,7 +514,7 @@ export function parseTableText(text: string): RawShipmentRow[] {
         invoiceAmountUSD: cleanNum(cells[15]),
         entryNo: cells[16] || '',
         invoiceNo: cells[17] || '',
-        sellingPriceUSD: cleanNum(cells[18]),
+        sellingPriceUSD,
         customsAmountUSD,
       });
     }
