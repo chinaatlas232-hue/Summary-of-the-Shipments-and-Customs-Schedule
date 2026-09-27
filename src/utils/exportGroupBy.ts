@@ -112,7 +112,8 @@ export function exportGroupByExcel(dataset: AggregatedShipment[]) {
 
         bodyHtml += `
           <tr class="${rowClass}">
-            <td class="text-center font-mono text-slate seq-cell">${groupIdx + 1}.${subIdx + 1}</td>
+            <!-- قاعدة أرقام التسلسل الصحيحة: تترك خلية التسلسل للحركات الفرعية فارغة تماماً (Blank) -->
+            <td class="text-center font-mono text-slate seq-cell">&nbsp;</td>
             <td class="text-center text-slate">${escapeHtml(group.containerNo || '-')}</td>
             <td class="text-center text-slate">${escapeHtml(group.shipmentType)}</td>
             <td class="text-center font-mono text-slate">${escapeHtml(sub.invoiceNo || '-')}</td>
@@ -488,9 +489,10 @@ export function exportGroupByCSV(dataset: AggregatedShipment[]) {
       ]);
 
       // 2. صفوف الحركات والسجلات الفرعية المرتبطة بهذا الكود (Sub-Items Grouped)
+      // قاعدة أرقام التسلسل الصحيحة: تترك خلية التسلسل للحركات الفرعية فارغة تماماً (Blank)
       group.items.forEach((sub, subIdx) => {
         rows.push([
-          `${groupIdx + 1}.${subIdx + 1}`,
+          '', // فارغة تماماً لتجنب أي تشتيت وللحفاظ على مظهر محاسبي نظيف وراقي
           group.containerNo || '-',
           group.shipmentType,
           sub.invoiceNo || '-',

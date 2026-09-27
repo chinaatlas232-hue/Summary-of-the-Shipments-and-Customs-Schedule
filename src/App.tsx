@@ -13,6 +13,8 @@ import {
   Check,
   FolderTree,
   Printer,
+  Download,
+  Loader2,
 } from 'lucide-react';
 import { RawShipmentRow } from './types';
 import {
@@ -21,8 +23,10 @@ import {
 } from './utils/shipmentProcessor';
 import { exportGroupByReport } from './utils/exportGroupBy';
 import { printGroupByReport } from './utils/printGroupByReport';
+import { exportGroupByPdf } from './utils/exportGroupByPdf';
 import { ShipmentTable } from './components/ShipmentTable';
 import { SummaryCards } from './components/SummaryCards';
+import { ShipmentDistributionChart } from './components/ShipmentDistributionChart';
 import { DataImporterModal } from './components/DataImporterModal';
 import { RawDataViewer } from './components/RawDataViewer';
 import { GroupByReportModal } from './components/GroupByReportModal';
@@ -270,6 +274,42 @@ export default function App() {
     });
   };
 
+  // دالة تصدير ملف PDF رسمي ومباشر عبر jsPDF
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const handleExportPdfDirect = async () => {
+    const exportDataset = searchQuery.trim() ? filteredData : aggregatedData;
+    if (exportDataset.length === 0) {
+      setNotification({
+        type: 'warning',
+        message: 'لا توجد بيانات متاحة لتصدير ملف PDF.',
+      });
+      return;
+    }
+
+    setIsExportingPdf(true);
+    setNotification({
+      type: 'info',
+      message: 'جارٍ إنشاء وتجهيز ملف PDF عالي الدقة يتضمن الترويسة والشعار الرسمي...',
+    });
+
+    try {
+      await exportGroupByPdf(exportDataset, { searchQuery });
+      setNotification({
+        type: 'success',
+        message: 'تم تصدير وتحميل تقرير PDF (Group-By) المعتمد بنجاح!',
+      });
+    } catch (e) {
+      console.error(e);
+      setNotification({
+        type: 'warning',
+        message: 'حدث خطأ أثناء تصدير الـ PDF. يمكنك استخدام خيار الطباعة المباشرة كبديل.',
+      });
+    } finally {
+      setIsExportingPdf(false);
+      setTimeout(() => setNotification(null), 4000);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 pb-16 w-full">
       {/* Top Navigation Bar - 60% gray (bg-slate-700) with clear white text & full width */}
@@ -346,6 +386,12 @@ export default function App() {
           data={filteredData}
           rawCount={isFiltered ? currentRawCount : rawData.length}
           totalCodesCount={aggregatedData.length}
+          isFiltered={isFiltered}
+        />
+
+        {/* Visual Chart Card - Sea vs Air Distribution with recharts */}
+        <ShipmentDistributionChart
+          data={filteredData}
           isFiltered={isFiltered}
         />
 
@@ -491,16 +537,33 @@ export default function App() {
               </button>
             </div>
 
-            {/* 7. طباعة / حفظ PDF مباشر (أزرق داكن أو رمادي محترف) */}
+            {/* 7. تصدير PDF مباشر عبر jsPDF */}
+            <button
+              type="button"
+              id="btn-direct-pdf"
+              onClick={handleExportPdfDirect}
+              disabled={isExportingPdf}
+              className="px-3.5 py-2.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:bg-rose-800 disabled:opacity-60 border border-rose-500 rounded-xl transition-all flex items-center gap-2 shadow-xs cursor-pointer"
+              title="تصدير وتحميل تقرير الحركات المنسق كملف PDF رسمي وفوري عبر jsPDF بالشعار والترويسة"
+            >
+              {isExportingPdf ? (
+                <Loader2 className="w-4 h-4 animate-spin text-rose-200" />
+              ) : (
+                <Download className="w-4 h-4 text-rose-200" />
+              )}
+              <span>تصدير PDF (jsPDF)</span>
+            </button>
+
+            {/* 8. طباعة / حفظ PDF عبر نافذة الطباعة المدمجة */}
             <button
               type="button"
               id="btn-direct-print"
               onClick={handlePrintDirect}
-              className="px-4 py-2.5 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 active:bg-black border border-slate-700 rounded-xl transition-all flex items-center gap-2 shadow-xs cursor-pointer"
+              className="px-3.5 py-2.5 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 active:bg-black border border-slate-700 rounded-xl transition-all flex items-center gap-2 shadow-xs cursor-pointer"
               title="طباعة التقرير فوراً أو حفظه كملف PDF عالي الجودة عبر طابعة المتصفح المدمجة بنظام الألوان والتنسيق الكامل وبدون أي أخطاء"
             >
               <Printer className="w-4 h-4 text-sky-400" />
-              <span>طباعة / حفظ PDF مباشر</span>
+              <span>طباعة / معاينة</span>
             </button>
           </div>
 

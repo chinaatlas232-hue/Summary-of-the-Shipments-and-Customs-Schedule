@@ -1,4 +1,5 @@
 import { AggregatedShipment } from '../types';
+import { LOGISTICS_LOGO_BASE64 } from '../assets/logoBase64';
 
 export interface PrintReportFilterInfo {
   searchQuery?: string;
@@ -107,7 +108,8 @@ export function printGroupByReport(
 
           tableRowsHtml += `
             <tr class="${rowClass}">
-              <td class="col-seq text-center font-mono text-slate text-xs">${groupIdx + 1}.${subIdx + 1}</td>
+              <!-- قاعدة أرقام التسلسل الصحيحة: تترك خلية التسلسل للحركات الفرعية فارغة تماماً (Blank) -->
+              <td class="col-seq text-center font-mono text-slate text-xs">&nbsp;</td>
               <td class="col-container text-center text-slate">${escapeHtml(group.containerNo || '-')}</td>
               <td class="col-shipment text-center text-slate">${escapeHtml(group.shipmentType)}</td>
               <td class="col-invoice text-center font-mono text-slate">${escapeHtml(sub.invoiceNo || '-')}</td>
@@ -229,6 +231,37 @@ export function printGroupByReport(
             padding-bottom: 12px;
             margin-bottom: 12px;
           }
+          .company-brand-wrap {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+          }
+          .company-logo-badge {
+            width: 54px;
+            height: 54px;
+            border-radius: 10px;
+            background-color: #ffffff;
+            padding: 4px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+          }
+          .company-logo-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 6px;
+          }
+          .company-sub-title {
+            font-size: 10.5px;
+            font-weight: 800;
+            color: #facc15;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+          }
           .report-title-row h1 {
             margin: 0 0 4px 0;
             font-size: 20px;
@@ -238,7 +271,7 @@ export function printGroupByReport(
           }
           .report-title-row p {
             margin: 0;
-            font-size: 11.5px;
+            font-size: 11px;
             color: #94a3b8;
           }
           .report-filter-badge {
@@ -438,15 +471,64 @@ export function printGroupByReport(
             border-top: 1px solid #e2e8f0;
             padding-top: 6px;
           }
+
+          /* إعدادات الطباعة الدقيقة (@media print) للحفاظ على الألوان والخطوط والترويسة */
+          @media print {
+            @page {
+              size: A4 landscape;
+              margin: 6mm 6mm 6mm 6mm;
+            }
+            html, body {
+              width: 100% !important;
+              background-color: #ffffff !important;
+              color: #0f172a !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            .report-header-box {
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+              margin-bottom: 8px !important;
+            }
+            thead {
+              display: table-header-group !important;
+            }
+            tfoot {
+              display: table-footer-group !important;
+            }
+            tr, td, th {
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+            }
+            .master-row, .subtotal-row, .grand-total-row, .single-row {
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            .no-print {
+              display: none !important;
+            }
+          }
         </style>
       </head>
       <body>
         <!-- 1. تنسيق الهيدر والترويسة (Report Header) -->
         <div class="report-header-box">
           <div class="report-title-row">
-            <div>
-              <h1>تقرير تجميع الشحنات والحركات التفصيلي (Group-By Code)</h1>
-              <p>نظام معالجة وتجميع بيانات الشحنات والرسوم الجمركية وفق قاعدة عدم التكرار (Single-Movement Clean Logic)</p>
+            <div class="company-brand-wrap">
+              <div class="company-logo-badge">
+                <img src="${LOGISTICS_LOGO_BASE64}" alt="Atlas Logistics Logo" class="company-logo-img" />
+              </div>
+              <div>
+                <div class="company-sub-title">شركة أطلس للشحن والخدمات اللوجستية والتخليص الجمركي الموحد</div>
+                <h1>تقرير تجميع الشحنات والحركات التفصيلي (Group-By Code)</h1>
+                <p>نظام معالجة وتجميع بيانات الشحنات والرسوم الجمركية وفق قاعدة عدم التكرار (Single-Movement Clean Logic)</p>
+              </div>
             </div>
             <div>
               <span class="report-filter-badge">${filterBadge}</span>

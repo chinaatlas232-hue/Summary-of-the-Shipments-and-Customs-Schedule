@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   X,
   Printer,
@@ -10,10 +10,14 @@ import {
   Boxes,
   DollarSign,
   Search,
+  Download,
+  Loader2,
 } from 'lucide-react';
 import { AggregatedShipment } from '../types';
 import { printGroupByReport, formatDisplayCode } from '../utils/printGroupByReport';
 import { exportGroupByExcel, exportGroupByCSV } from '../utils/exportGroupBy';
+import { exportGroupByPdf } from '../utils/exportGroupByPdf';
+import { LOGISTICS_LOGO_BASE64 } from '../assets/logoBase64';
 
 interface GroupByReportModalProps {
   isOpen: boolean;
@@ -69,11 +73,22 @@ export function GroupByReportModal({
     minute: '2-digit',
   });
 
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+
   const handlePrint = () => {
     printGroupByReport(dataset, {
       searchQuery,
       totalMasterCount: stats.masterCount,
     });
+  };
+
+  const handlePdf = async () => {
+    setIsExportingPdf(true);
+    try {
+      await exportGroupByPdf(dataset, { searchQuery });
+    } finally {
+      setIsExportingPdf(false);
+    }
   };
 
   const handleExcel = () => {
@@ -112,6 +127,21 @@ export function GroupByReportModal({
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              id="btn-modal-pdf"
+              onClick={handlePdf}
+              disabled={isExportingPdf}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:bg-rose-800 disabled:opacity-60 rounded-lg shadow-sm transition-all cursor-pointer"
+              title="تصدير وتحميل ملف PDF رسمي ومباشر عبر jsPDF"
+            >
+              {isExportingPdf ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Download className="w-3.5 h-3.5" />
+              )}
+              <span>تصدير PDF</span>
+            </button>
             <button
               type="button"
               id="btn-modal-print"
@@ -161,13 +191,21 @@ export function GroupByReportModal({
             {/* 1. تنسيق الهيدر والترويسة (Report Header) */}
             <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white rounded-xl p-4 sm:p-5 border border-slate-800 shadow-sm">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3.5 mb-3.5 border-b border-slate-700/80 gap-3">
-                <div>
-                  <h1 className="text-lg sm:text-xl font-black text-white tracking-tight">
-                    تقرير تجميع الشحنات والحركات التفصيلي (Group-By Code)
-                  </h1>
-                  <p className="text-xs text-slate-300 mt-0.5">
-                    نظام معالجة وتجميع بيانات الشحنات والرسوم الجمركية وفق قاعدة عدم التكرار (Single-Movement Clean Logic)
-                  </p>
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-xl bg-white p-1 shadow-md shrink-0 flex items-center justify-center">
+                    <img src={LOGISTICS_LOGO_BASE64} alt="Atlas Logistics Logo" className="w-full h-full object-contain rounded-lg" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-extrabold text-amber-400 uppercase tracking-wide">
+                      شركة أطلس للشحن والخدمات اللوجستية والتخليص الجمركي الموحد
+                    </div>
+                    <h1 className="text-lg sm:text-xl font-black text-white tracking-tight">
+                      تقرير تجميع الشحنات والحركات التفصيلي (Group-By Code)
+                    </h1>
+                    <p className="text-xs text-slate-300 mt-0.5">
+                      نظام معالجة وتجميع بيانات الشحنات والرسوم الجمركية وفق قاعدة عدم التكرار (Single-Movement Clean Logic)
+                    </p>
+                  </div>
                 </div>
                 {searchQuery.trim() && (
                   <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-lg text-xs font-bold">
@@ -256,7 +294,7 @@ export function GroupByReportModal({
                       const customsVal = Number(sub.customsAmountUSD || group.totalCustomsUSD || 0);
 
                       return (
-                        <tr key={group.id || groupIdx} className="bg-white hover:bg-slate-50 transition-colors">
+                        <tr key={group.code ? `single-${group.code}-${groupIdx}` : groupIdx} className="bg-white hover:bg-slate-50 transition-colors">
                           <td className="py-2 px-2 text-center font-mono font-bold text-slate-600 border-r border-slate-200">{groupIdx + 1}</td>
                           <td className="py-2 px-2 text-center font-bold text-slate-800 border-r border-slate-200">{group.containerNo || '-'}</td>
                           <td className="py-2 px-2 text-center border-r border-slate-200">
@@ -294,7 +332,7 @@ export function GroupByReportModal({
 
                     // مجموعة تحتوي على حركتين أو أكثر (أكواد متعددة)
                     return (
-                      <tbody key={group.id || groupIdx} className="border-b-2 border-amber-200">
+                      <tbody key={group.code ? `tbody-${group.code}-${groupIdx}` : groupIdx} className="border-b-2 border-amber-200">
                         {/* أ. صف الكود الرئيسي المجمع (تظليل دافئ وناعم بلون كهرماني/أصفر فاتح مع خط عريض) */}
                         <tr className="bg-amber-50/80 border-t-2 border-amber-400 text-amber-950 font-bold hover:bg-amber-100/70 transition-colors">
                           <td className="py-2.5 px-2 text-center font-mono font-black border-r border-amber-200">{groupIdx + 1}</td>
@@ -342,9 +380,8 @@ export function GroupByReportModal({
                                 isOdd ? 'bg-slate-50' : 'bg-white'
                               } hover:bg-slate-100/70 transition-colors text-slate-700`}
                             >
-                              <td className="py-1.5 px-2 text-center font-mono text-[11px] text-slate-500 border-r border-slate-200">
-                                {groupIdx + 1}.{subIdx + 1}
-                              </td>
+                              {/* قاعدة أرقام التسلسل الصحيحة: تترك خلية التسلسل للحركات الفرعية فارغة تماماً (Blank) */}
+                              <td className="py-1.5 px-2 text-center border-r border-slate-200"></td>
                               <td className="py-1.5 px-2 text-center text-slate-500 border-r border-slate-200">{group.containerNo || '-'}</td>
                               <td className="py-1.5 px-2 text-center text-slate-500 border-r border-slate-200">{group.shipmentType}</td>
                               <td className="py-1.5 px-2 text-center font-mono text-slate-500 border-r border-slate-200">{sub.invoiceNo || '-'}</td>
